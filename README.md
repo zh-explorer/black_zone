@@ -147,3 +147,8 @@ dump下流量的json数据
 > getlevel()
 
 返回流量危险等级
+
+## TODO
+1.添加ptrace功能
+2.给pwn之前的交互留接口
+3.增加多次重启功能(守护pwn程序)
