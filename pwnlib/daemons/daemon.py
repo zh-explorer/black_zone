@@ -58,11 +58,12 @@ class daemon(Timeout):
         self.close_fds = close_fds
         self.preexec_fn = preexec_fn
 
-    def __call__(self, getFlag=None):
+    def __call__(self, getFlag=None, before_pwn = None):
         with listened(self.port, self.bindaddr, self.fam, self.typ, self.Timeout) as listen:
             if listen == None:
                 return
-
+            if before_pwn != None:
+                before_pwn(listen)
             if sqllog.sql_on == True:
                 self.sql_init(listen)
             if self.permission:

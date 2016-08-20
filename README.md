@@ -49,7 +49,9 @@ timeout为连接超时的时间
 >`set_process`(self, argv, shell=False, executable=None, cwd=None, env=None, timeout=Timeout.default, stdin=PIPE, stdout=PTY, stderr=STDOUT, close_fds=True, preexec_fn=lambda: None):
 在启动监听前必须调用此方法设置pwn题binary的路径以及运行目录信息。所有参数与pwntools中process参数相同
 
->__call__(self, getFlag=None)
+>__call__(self, getFlag=None, before_pwn=None)
+
+brfore_pwn(listen) 回调函数,在沙箱监控到有连接进入的第一时间被调用。可以在这个函数里做一些自定义的初始化工作。包括传入的listen句柄,可以用他和被连接者做一些交互的工作。
 
 调用类启动脚本。如果开启高级权限隔离，则需要传入getFlag回调函数，用以获取flag
 
@@ -151,6 +153,8 @@ dump下流量的json数据
 ## TODO
 1.添加ptrace功能
 
-2.给pwn之前的交互留接口
+~~2.给pwn之前的交互留接口~~
 
 3.增加多次重启功能(守护pwn程序)
+
+4.优化包结构,让在不使用某些功能的时候减少依赖。
