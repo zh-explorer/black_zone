@@ -62,10 +62,12 @@ class daemon(Timeout):
         with listened(self.port, self.bindaddr, self.fam, self.typ, self.Timeout) as listen:
             if listen == None:
                 return
-            if before_pwn != None:
-                before_pwn(listen)
             if sqllog.sql_on == True:
                 self.sql_init(listen)
+            if before_pwn != None:
+                if sqllog.sql_on == True:
+                    sqllog.updata_sql()
+                before_pwn(listen)
             if self.permission:
                 self._set_env(getFlag)
             pid = os.fork()
