@@ -20,4 +20,4 @@ a.set_process('/home/pwn/pwn/pwn', cwd='/home/pwn')  # first argument is the bin
 a.set_sql('explorer', '123456')  # The name and password of mysql. Default it will log data in database pwnlog.
 # But you can easy change it.And dot't worry of table.I will create it
 a.open_permission()
-a(getFlag,getName)  # start it
+a(getFlag,getName,reboot=5)  # start it
