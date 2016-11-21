@@ -114,5 +114,6 @@ Temporary Items
 
 # Linux trash folder which might appear on any partition or disk
 .Trash-*
+.gdb*
 
 # Created by .ignore support plugin (hsz.mobi)
