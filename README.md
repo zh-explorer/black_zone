@@ -41,10 +41,10 @@ a(getFlag)  # start it
 
 timeout为连接超时的时间
 ####必须调用的方法，用以设置必要信息
->`set_listen`(self, port=0, bindaddr="0.0.0.0", fam="any", typ="tcp", timeout=Timeout.default):
+>`set_listen`(self, port=0, bindaddr="0.0.0.0", fam="any", typ="tcp", timeout=Timeout.default,timeLimit=0):
 
 在启动监听前必须调用此方法设置监听连接的参数。所有参数与pwntools中listen参数相同
-
+timeLimit的左右是限制两次连接之间的时间间隔。如果两次连接间隔过短，会直接退出。防止恶意ddos
 
 >`set_process`(self, argv, shell=False, executable=None, cwd=None, env=None, timeout=Timeout.default, stdin=PIPE, stdout=PTY, stderr=STDOUT, close_fds=True, preexec_fn=lambda: None):
 在启动监听前必须调用此方法设置pwn题binary的路径以及运行目录信息。所有参数与pwntools中process参数相同

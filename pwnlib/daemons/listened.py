@@ -1,3 +1,4 @@
+import socket
 import time
 
 import signal
@@ -27,17 +28,18 @@ logger = log.getLogger('pwnlib.listened')
 #                 # def end(self):
 #                 # pass
 
-
 class listened():
     def __init__(self, port=0, bindaddr="0.0.0.0",
                  fam="any", typ="tcp",
-                 timeout=Timeout.default):
+                 timeout=Timeout.default,timeLimit=0):
         self.port = port
         self.bindaddr = bindaddr
         self.fam = fam
         self.typ = typ
         self.timeout = timeout
-
+        self.timeLimit = timeLimit
+        self.hosts = set()
+        self.time = time.time()
         self.listen_handle = listen(port, bindaddr, fam, typ, timeout)
         # self.w = wait_child()
         # self.w.start()
@@ -47,21 +49,23 @@ class listened():
         try:
             while True:
                 self.listen_handle.wait_for_connection()
-                pid = os.fork()
-                if pid < 0:
-                    logger.error("fork fail")
-                elif pid == 0:
+                if self.timeLimit == 0 or self.checkRelink(self.listen_handle.sock.getpeername()[0]):
                     pid = os.fork()
                     if pid < 0:
-                        logger.error('fork fail')
+                        logger.error("fork fail")
                     elif pid == 0:
-                        return self.listen_handle
-                    else:
-                        exit(0)
+                        pid = os.fork()
+                        if pid < 0:
+                            logger.error('fork fail')
+                        elif pid == 0:
+                            return self.listen_handle
+                        else:
+                            exit(0)
                 else:
-                    os.wait()
-                    # time.sleep(0.3)
-                    self.listen_handle = listen(self.port, self.bindaddr, self.fam, self.typ, self.timeout)
+                    # self.listen_handle.sendline('please wait for a moment and retry')
+                    self.listen_handle.sock.send('please wait for a moment and retry\n')
+                    self.listen_handle.close()
+                self.listen_handle = listen(self.port, self.bindaddr, self.fam, self.typ, self.timeout)
         except KeyboardInterrupt:
             self.listen_handle.close()
             # if self.w.pid != 0:
@@ -72,3 +76,14 @@ class listened():
         # self.listen_handle.close()
         # exit(0)
         pass
+
+    def checkRelink(self, host):
+        if time.time() - self.time > self.timeLimit:
+            self.time = time.time()
+            self.hosts = set()
+
+        if host in self.hosts:
+            return False
+        else:
+            self.hosts.add(host)
+            return True

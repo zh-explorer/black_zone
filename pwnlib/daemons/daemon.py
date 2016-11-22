@@ -25,12 +25,13 @@ class daemon(Timeout):
 
     def set_listen(self, port=0, bindaddr="0.0.0.0",
                    fam="any", typ="tcp",
-                   timeout=Timeout.default):
+                   timeout=Timeout.default,timeLimit = 0):
         self.port = port
         self.bindaddr = bindaddr
         self.fam = fam
         self.typ = typ
         self.Timeout = timeout
+        self.timeLimit = timeLimit
 
     def set_process(self, argv,
                     shell=False,
@@ -59,7 +60,7 @@ class daemon(Timeout):
         self.preexec_fn = preexec_fn
 
     def __call__(self, getFlag=None, before_pwn = None):
-        with listened(self.port, self.bindaddr, self.fam, self.typ, self.Timeout) as listen:
+        with listened(self.port, self.bindaddr, self.fam, self.typ, self.Timeout,self.timeLimit) as listen:
             if listen == None:
                 return
             if sqllog.sql_on == True:
@@ -96,7 +97,7 @@ class daemon(Timeout):
                             if process.poll() != None:
                                 break  # don't count if process if end
                         if not self.countdown_active():
-                            listen.sendline('Sorry timeout')
+                            listen.sendline('timeout')
                     process.close()
                     # listen.close()
                 except KeyboardInterrupt:
