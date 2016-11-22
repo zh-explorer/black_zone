@@ -17,7 +17,6 @@ a = pwn.daemon(0)  # A demon class,The argument is the second of time out, 0 is 
 
 a.set_listen(12345)  # The port you want to listen
 newEnv = os.environ.copy()
-newEnv['LD_PRELOAD'] = '/tmp/libc.so.6'
 a.set_process('/home/pwn/pwn/pwn', cwd='/home/pwn', env=newEnv)  # first argument is the binary,
 # make sure other has permission of execute for it
 a.set_sql('explorer', '123456')  # The name and password of mysql. Default it will log data in database pwnlog.

@@ -12,6 +12,7 @@ from ..tubes.process import PIPE, PTY, STDOUT
 from .. import timeout
 from .. import log
 from .. import sqllog
+import resource
 
 logger = log.getLogger('pwnlib.daemon')
 
@@ -132,6 +133,9 @@ class daemon(Timeout):
         os.setgroups([gid])
         os.setgid(gid)
         os.setuid(uid)
+        resource.setrlimit(resource.RLIMIT_CORE,(0,0))
+        resource.setrlimit(resource.RLIMIT_NPROC,(20,40))
+
 
     def close_all_log(self):
         log.close_all_log = True

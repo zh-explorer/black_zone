@@ -59,7 +59,6 @@ class listened():
                     else:
                         exit(0)
                 else:
-                    os.wait()
                     # time.sleep(0.3)
                     self.listen_handle = listen(self.port, self.bindaddr, self.fam, self.typ, self.timeout)
         except KeyboardInterrupt:
