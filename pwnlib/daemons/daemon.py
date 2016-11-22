@@ -3,7 +3,11 @@ import time
 
 import subprocess
 from pwd import getpwnam
+import select
 from random import randint, seed
+
+import signal
+
 from .. import context
 from ..timeout import Timeout
 from .listened import listened
@@ -59,7 +63,7 @@ class daemon(Timeout):
         self.close_fds = close_fds
         self.preexec_fn = preexec_fn
 
-    def __call__(self, getFlag=None, before_pwn = None):
+    def __call__(self, getFlag=None, before_pwn = None,reboot = 1):
         with listened(self.port, self.bindaddr, self.fam, self.typ, self.Timeout) as listen:
             if listen == None:
                 return
@@ -78,28 +82,29 @@ class daemon(Timeout):
                         sqllog.updata_sql()
                     if self.permission:
                         self._set_permission()
-                    process = tubes.process.process(self.argv,
-                                                    self.shell,
-                                                    self.executable,
-                                                    self.cwd,
-                                                    self.env,
-                                                    self.out,
-                                                    self.stdin,
-                                                    self.stdout,
-                                                    self.stderr,
-                                                    self.close_fds,
-                                                    self.preexec_fn)
-                    process.close_info_log(True)
-                    process.connect_both(listen)
-                    with self.countdown():
-                        while self.countdown_active():  # shutdown process if time out
-                            time.sleep(0.1)
-                            if process.poll() != None:
-                                break  # don't count if process if end
-                        if not self.countdown_active():
-                            listen.sendline('Sorry timeout')
-                    process.close()
-                    # listen.close()
+                    for i in xrange(reboot):
+                        process = tubes.process.process(self.argv,
+                                                        self.shell,
+                                                        self.executable,
+                                                        self.cwd,
+                                                        self.env,
+                                                        self.out,
+                                                        self.stdin,
+                                                        self.stdout,
+                                                        self.stderr,
+                                                        self.close_fds,
+                                                        self.preexec_fn)
+                        process.close_info_log(True)
+                        self.link(process,listen)
+                        with self.countdown():
+                            while self.countdown_active():  # shutdown process if time out
+                                time.sleep(0.1)
+                                if process.poll() != None:
+                                    break  # don't count if process if end
+                            if not self.countdown_active():
+                                listen.sendline('Sorry timeout')
+                        process.close()
+                    listen.close()
                 except KeyboardInterrupt:
                     listen.close()
             else:
@@ -160,3 +165,24 @@ class daemon(Timeout):
         if os.getuid() != 0:
             logger.error("This daemon need to run at root")
         self.permission = True
+
+    def link(self, process, listen):
+        def accepter():
+            while True:
+                rs,ws,es = select.select([process.proc.stdout.fileno(),listen.fileno()],[],[])
+                for fd in rs:
+                    if fd == process.proc.stdout.fileno():
+                        try:
+                            data = process.recv()
+                            listen.write(data)
+                        except:
+                            return
+                    if fd == listen.fileno():
+                        try:
+                            data = listen.recv()
+                            process.write(data)
+                        except:
+                            pid = os.getpid()
+                            os.kill(pid,signal.SIGTERM)
+        t = context.Thread(target = accepter)
+        t.start()
