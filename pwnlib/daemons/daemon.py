@@ -3,10 +3,12 @@ import time
 
 import subprocess
 from pwd import getpwnam
-import select
+import select, socket
 from random import randint, seed
 
 import signal
+
+import sys
 
 from .. import context
 from ..timeout import Timeout
@@ -30,13 +32,14 @@ class daemon(Timeout):
 
     def set_listen(self, port=0, bindaddr="0.0.0.0",
                    fam="any", typ="tcp",
-                   timeout=Timeout.default,timeLimit = 0):
+                   timeout=Timeout.default, timeLimit=0):
         self.port = port
         self.bindaddr = bindaddr
         self.fam = fam
         self.typ = typ
         self.Timeout = timeout
         self.timeLimit = timeLimit
+        self.thread_continue = True
 
     def set_process(self, argv,
                     shell=False,
@@ -64,8 +67,8 @@ class daemon(Timeout):
         self.close_fds = close_fds
         self.preexec_fn = preexec_fn
 
-    def __call__(self, getFlag=None, before_pwn = None,reboot = 1):
-        with listened(self.port, self.bindaddr, self.fam, self.typ, self.Timeout,self.timeLimit) as listen:
+    def __call__(self, getFlag=None, before_pwn=None, reboot=1):
+        with listened(self.port, self.bindaddr, self.fam, self.typ, self.Timeout, self.timeLimit) as listen:
             if listen == None:
                 return
             if sqllog.sql_on == True:
@@ -96,7 +99,7 @@ class daemon(Timeout):
                                                         self.close_fds,
                                                         self.preexec_fn)
                         process.close_info_log(True)
-                        self.link(process,listen)
+                        self.link(process, listen)
                         with self.countdown():
                             while self.countdown_active():  # shutdown process if time out
                                 time.sleep(0.1)
@@ -108,6 +111,9 @@ class daemon(Timeout):
                     listen.close()
                 except KeyboardInterrupt:
                     listen.close()
+                finally:
+                    self.thread_continue = False
+                    exit(0)
             else:
                 try:
                     os.waitpid(pid, 0)
@@ -139,9 +145,8 @@ class daemon(Timeout):
         os.setgroups([gid])
         os.setgid(gid)
         os.setuid(uid)
-        resource.setrlimit(resource.RLIMIT_CORE,(0,0))
-        resource.setrlimit(resource.RLIMIT_NPROC,(20,40))
-
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        resource.setrlimit(resource.RLIMIT_NPROC, (20, 40))
 
     def close_all_log(self):
         log.close_all_log = True
@@ -169,8 +174,8 @@ class daemon(Timeout):
 
     def link(self, process, listen):
         def accepter():
-            while True:
-                rs,ws,es = select.select([process.proc.stdout.fileno(),listen.fileno()],[],[])
+            while self.thread_continue:
+                rs, ws, es = select.select([process.proc.stdout.fileno(), listen.fileno()], [], [], 1)
                 for fd in rs:
                     if fd == process.proc.stdout.fileno():
                         try:
@@ -184,6 +189,9 @@ class daemon(Timeout):
                             process.write(data)
                         except:
                             pid = os.getpid()
-                            os.kill(pid,signal.SIGTERM)
-        t = context.Thread(target = accepter)
+                            os.kill(pid, signal.SIGTERM)
+                            return
+
+        t = context.Thread(target=accepter)
         t.start()
+

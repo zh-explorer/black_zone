@@ -61,6 +61,8 @@ class listened():
                             return self.listen_handle
                         else:
                             exit(0)
+                    else:
+                        os.wait()
                 else:
                     # self.listen_handle.sendline('please wait for a moment and retry')
                     self.listen_handle.sock.send('please wait for a moment and retry\n')
