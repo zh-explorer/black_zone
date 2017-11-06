@@ -137,7 +137,7 @@ class daemon(Timeout):
         os.makedirs(self.cwd, 0755)
         os.system('useradd -p "" -s "/usr/sbin/nologin" -d "{}" {}'.format(self.cwd, self.username))
         if self.bin != None:
-            os.system('cp -r {0} {1}'.format(self.bin, self.cwd))
+            os.system('cp -r {0}/* {1}/'.format(self.bin, self.cwd))
         if getFlag != None:
             seed(time.time())
             os.system('echo "%s" >> %s/flag%d' % (getFlag(), self.cwd, randint(10000, 99999)))
