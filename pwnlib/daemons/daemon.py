@@ -79,7 +79,11 @@ class daemon(Timeout):
             if before_pwn != None:
                 if sqllog.sql_on == True:
                     sqllog.updata_sql()
-                before_pwn(listen)
+                r = before_pwn(listen)
+                if r == False and sqllog.sql_on == True:
+                    sqllog.updata_sql()
+                    sqllog.sql.log_finish()
+                    exit(0)
             if self.permission:
                 self._set_env(getFlag)
             pid = os.fork()
@@ -186,13 +190,13 @@ class daemon(Timeout):
                 for fd in rs:
                     if fd == process.proc.stdout.fileno():
                         try:
-                            data = process.recv()
+                            data = process.recv(65535)
                             listen.write(data)
                         except:
                             return
                     if fd == listen.fileno():
                         try:
-                            data = listen.recv()
+                            data = listen.recv(65535)
                             process.write(data)
                         except:
                             pid = os.getpid()
