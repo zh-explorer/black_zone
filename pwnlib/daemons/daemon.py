@@ -2,6 +2,7 @@ import os
 import time
 
 import subprocess
+import traceback
 from pwd import getpwnam
 import select, socket
 from random import randint, seed
@@ -51,7 +52,8 @@ class daemon(Timeout):
                     stdout=PTY,
                     stderr=STDOUT,
                     close_fds=True,
-                    preexec_fn=lambda: None):
+                    preexec_fn=lambda: None,
+                    bin=None):
         cwd = cwd or os.path.curdir
         if cwd != '/':
             cwd += '/'
@@ -66,6 +68,7 @@ class daemon(Timeout):
         self.stderr = stderr
         self.close_fds = close_fds
         self.preexec_fn = preexec_fn
+        self.bin = bin
 
     def __call__(self, getFlag=None, before_pwn=None, reboot=1):
         with listened(self.port, self.bindaddr, self.fam, self.typ, self.Timeout, self.timeLimit) as listen:
@@ -111,6 +114,8 @@ class daemon(Timeout):
                     listen.close()
                 except KeyboardInterrupt:
                     listen.close()
+                except:
+                    traceback.print_exc()
                 finally:
                     self.thread_continue = False
                     exit(0)
@@ -131,11 +136,13 @@ class daemon(Timeout):
         self.cwd = self.cwd + self.username
         os.makedirs(self.cwd, 0755)
         os.system('useradd -p "" -s "/usr/sbin/nologin" -d "{}" {}'.format(self.cwd, self.username))
-        os.system('chown -hR {0}:{0} {1}/ '.format(self.username, self.cwd))
-        os.system('chmod -R 0750 ' + self.cwd)
+        if self.bin != None:
+            os.system('cp -r {0} {1}'.format(self.bin, self.cwd))
         if getFlag != None:
             seed(time.time())
             os.system('echo "%s" >> %s/flag%d' % (getFlag(), self.cwd, randint(10000, 99999)))
+        os.system('chown -hR {0}:{0} {1}/ '.format(self.username, self.cwd))
+        os.system('chmod -R 0750 ' + self.cwd)
 
     def _set_permission(self):
         pw = getpwnam(self.username)
@@ -146,7 +153,7 @@ class daemon(Timeout):
         os.setgid(gid)
         os.setuid(uid)
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-        resource.setrlimit(resource.RLIMIT_NPROC, (20, 40))
+        # resource.setrlimit(resource.RLIMIT_NPROC, (20, 40))
 
     def close_all_log(self):
         log.close_all_log = True
@@ -194,4 +201,3 @@ class daemon(Timeout):
 
         t = context.Thread(target=accepter)
         t.start()
-
