@@ -143,8 +143,7 @@ class daemon(Timeout):
         if self.bin != None:
             os.system('cp -r {0}/* {1}/'.format(self.bin, self.cwd))
         if getFlag != None:
-            seed(time.time())
-            os.system('echo "%s" >> %s/flag%d' % (getFlag(), self.cwd, randint(10000, 99999)))
+            os.system('echo "%s" >> %s/flag' % (getFlag(), self.cwd))
         os.system('chown -hR {0}:{0} {1}/ '.format(self.username, self.cwd))
         os.system('chmod -R 0750 ' + self.cwd)
 
