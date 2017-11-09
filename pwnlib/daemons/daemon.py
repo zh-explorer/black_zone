@@ -185,10 +185,7 @@ class daemon(Timeout):
     def link(self, process, listen):
         def accepter():
             while self.thread_continue:
-                try:
-                    rs, ws, es = select.select([process.proc.stdout.fileno(), listen.fileno()], [], [], 1)
-                except ValueError:
-                    return 
+                rs, ws, es = select.select([process.proc.stdout.fileno(), listen.fileno()], [], [], 1)
                 for fd in rs:
                     if fd == process.proc.stdout.fileno():
                         try:
